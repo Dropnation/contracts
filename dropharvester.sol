@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract Harvester is Ownable, ReentrancyGuard {
+contract dropHarvester is Ownable, ReentrancyGuard {
     IERC20 public dropToken;
     IERC20 public payToken;
     uint256 public totalRewards = 1;
@@ -206,8 +206,16 @@ contract Harvester is Ownable, ReentrancyGuard {
         payToken = IERC20(_payToken);
     }
 
-    function addToBlacklist(address _addr) external onlyOwner {
-        blacklist[_addr] = 1;
+    function addToBlacklist(address[] calldata _addresses) external onlyOwner {
+        for (uint256 i = 0; i < _addresses.length; i++) {
+            blacklist[_addresses[i]] = 1;
+        }
+    }
+
+    function removeFromBlacklist(address[] calldata _addresses) external onlyOwner {
+        for (uint256 i = 0; i < _addresses.length; i++) {
+            blacklist[_addresses[i]] = 0;
+        }
     }
     
     function removeFromBlacklist(address _addr) external onlyOwner {
