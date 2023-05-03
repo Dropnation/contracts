@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract dropHarvester is Ownable, ReentrancyGuard {
+contract Harvester is Ownable, ReentrancyGuard {
     IERC20 public dropToken;
     IERC20 public payToken;
     uint256 public totalRewards = 1;
@@ -21,6 +21,7 @@ contract dropHarvester is Ownable, ReentrancyGuard {
     uint256 public timeLock = 3 days;
     uint256 public TotaldropSent = 1;
     uint256 public tax = 0;
+    uint256 public TaxTotal = 0;
     uint256 private divisor = 100 ether;
     address private guard; 
     bool public paused = false; 
@@ -30,6 +31,7 @@ contract dropHarvester is Ownable, ReentrancyGuard {
     mapping(address => uint256) public entryMap;
     mapping(address => uint256) public UserClaims;
     mapping(address => uint256) public blacklist;
+    mapping(address => uint256) public Claimants;
 
     address[] public participants;
 
@@ -67,7 +69,6 @@ contract dropHarvester is Ownable, ReentrancyGuard {
 
     modifier onlyClaimant() {             
         require(UserClaims[msg.sender] + timeLock < block.timestamp, "Timelocked.");
-        require(claimRewards[msg.sender].rewardsOwed > 0, "No rewards.");
         _;
     }
 
@@ -77,7 +78,9 @@ contract dropHarvester is Ownable, ReentrancyGuard {
         require(blacklist[msg.sender] == 0, "Address is blacklisted.");
         require(dropToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed.");
         Claim storage claimData = claimRewards[msg.sender];
-        uint256 amount = _amount - (_amount * tax)/100;
+        uint256 toll = (_amount * tax)/100;
+        uint256 amount = _amount - toll;
+        TaxTotal += toll;
         uint256 currentBalance = balances[msg.sender];
         uint256 newBalance = currentBalance + amount;
         balances[msg.sender] = newBalance;
@@ -159,11 +162,14 @@ contract dropHarvester is Ownable, ReentrancyGuard {
     function claim() public nonReentrant onlyClaimant {  
         require(!paused, "Contract already paused.");         
         require(blacklist[msg.sender] == 0, "Address is blacklisted.");        
-        updateAllClaims();     
+        updateAllClaims();          
+        require(claimRewards[msg.sender].rewardsOwed > 0, "No rewards.");
         Claim storage claimData = claimRewards[msg.sender];
         uint256 rewards = claimData.rewardsOwed / divisor;
         require(payToken.transfer(msg.sender, rewards), "Transfer failed.");        
         claimData.rewardsOwed = 0;
+        // Update the total rewards claimed by the user
+        Claimants[msg.sender] += rewards;
         totalClaimedRewards += rewards;
         totalRewards -= rewards;
         updateRewardPerStamp(); 
@@ -174,11 +180,13 @@ contract dropHarvester is Ownable, ReentrancyGuard {
     function withdraw(uint256 _binary, uint256 amount) external onlyOwner {
         require(amount > 0, "Amount must be greater than zero.");
         if (_binary > 1) {
-            require(payToken.balanceOf(address(this)) >= amount, "Insufficient balance.");
+            require(payToken.balanceOf(address(this)) >= amount, "Not Enough Reserves.");
             require(payToken.transfer(msg.sender, amount), "Transfer failed.");
         } else {
-            require(dropToken.balanceOf(address(this)) >= amount, "Insufficient balance.");
+            require(amount <= TaxTotal, "Max Exceeded.");
+            require(dropToken.balanceOf(address(this)) >= TaxTotal, "Not enough Reserves.");
             require(dropToken.transfer(msg.sender, amount), "Transfer failed.");
+            TaxTotal -= amount;
         }
         totalRewards -= amount;
         updateRewardPerStamp();
