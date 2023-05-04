@@ -225,10 +225,6 @@ contract Harvester is Ownable, ReentrancyGuard {
             blacklist[_addresses[i]] = 0;
         }
     }
-    
-    function removeFromBlacklist(address _addr) external onlyOwner {
-        blacklist[_addr] = 0;
-    }
 
     event Pause();
     function pause() public onlyGuard {
