@@ -32,7 +32,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
  * these events, as it isn't required by the specification.
  *
  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting 
+ * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
 contract ERC20 is Context, IERC20, IERC20Metadata {
@@ -41,13 +41,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
-    uint256 public constant taxPercentage = 4;
-    uint256 public constant taxDivisor = 100;
     address public droperWallet;
     address public devWallet;
     address public lpWallet;
     address public farmerWallet;
-
     string private _name;
     string private _symbol;
 
@@ -117,15 +114,8 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - the caller must have a balance of at least `amount`.
      */
     function transfer(address to, uint256 amount) public virtual override returns (bool) {
-        address owner = _msgSender();
-        uint256 taxed = amount * taxPercentage / taxDivisor;
-        uint256 Amount = amount - taxed;
-        uint256 toll = taxed / 4;                
-        _transfer(owner, to, Amount);
-        _transfer(owner, droperWallet, toll);
-        _transfer(owner, farmerWallet, toll);
-        _transfer(owner, devWallet, toll);
-        _transfer(owner, lpWallet, toll);
+        address owner = _msgSender();              
+        _transfer(owner, to, amount);
         return true;
     }
 
@@ -225,7 +215,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
      * Emits a {Transfer} event.
-     *
+     * Taxes each transfer to a series of wallets.
      * Requirements:
      *
      * - `from` cannot be the zero address.
@@ -240,17 +230,36 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
         uint256 fromBalance = _balances[from];
         require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        uint256 taxAmount = (amount * 4) / 100; // calculate tax amount
+        uint256 transferAmount = amount - taxAmount; // calculate transfer amount
+
+        // transfer the transferAmount to the recipient
         unchecked {
             _balances[from] = fromBalance - amount;
             // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
             // decrementing then incrementing.
-            _balances[to] += amount;
+            _balances[to] += transferAmount;
         }
 
-        emit Transfer(from, to, amount);
+        // transfer the taxAmount to the four wallets
+        uint256 eachAmount = taxAmount / 4;
+        unchecked {
+            _balances[droperWallet] += eachAmount;
+            _balances[devWallet] += eachAmount;
+            _balances[lpWallet] += eachAmount;
+            _balances[farmerWallet] += eachAmount;
+        }
 
-        _afterTokenTransfer(from, to, amount);
+        emit Transfer(from, to, transferAmount);
+        emit Transfer(from, droperWallet, eachAmount);
+        emit Transfer(from, devWallet, eachAmount);
+        emit Transfer(from, lpWallet, eachAmount);
+        emit Transfer(from, farmerWallet, eachAmount);
+
+        _afterTokenTransfer(from, to, transferAmount);
     }
+
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
