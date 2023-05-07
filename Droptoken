@@ -11,10 +11,16 @@ import "./ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Dropnation is ERC20, Ownable, ReentrancyGuard {        
-        constructor(string memory _name, string memory _symbol, address _newGuard) 
+        constructor(string memory _name, string memory _symbol, address _newGuard, 
+        address _droperWallet, address _devWallet, address _lpWallet, address _farmerWallet) 
             ERC20(_name, _symbol)
         {
-        guard = _newGuard;
+        guard = _newGuard;        
+        droperWallet = _droperWallet;
+        devWallet = _devWallet;
+        lpWallet = _lpWallet;
+        farmerWallet = _farmerWallet;
+
         }
     using ABDKMath64x64 for uint256;
     using SafeMath for uint256;
@@ -77,6 +83,9 @@ contract Dropnation is ERC20, Ownable, ReentrancyGuard {
         emit Unpause();
     }
 
+    /**
+     * @dev sets wallets tax is sent to.
+     */
     function setWallets (address _droperwallet, address _lpwallet, address _devWallet, address _farmerWallet) external onlyOwner {
         droperWallet = _droperwallet;
         lpWallet = _lpwallet;
