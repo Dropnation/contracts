@@ -35,9 +35,8 @@ contract Distributor is Ownable, ReentrancyGuard {
         token = token_;
     }
 
-    function setMerkleParam(bytes32 root_, IERC20 token_) external onlyOwner {
-        merkleRoot = root_;        
-        token = token_;
+    function setMerkleParam(bytes32 root_) external onlyOwner {
+        merkleRoot = root_;
     }
 
     function claimable() public view returns(uint256) {
