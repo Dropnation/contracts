@@ -87,6 +87,10 @@ contract Distributor is Ownable, ReentrancyGuard {
         return claimedSupply * 100e6 / TOTAL_CLAIMABLE; 
     }
 
+    function setToken(IERC20 _token) external onlyOwner {
+        token = _token;
+    }
+
     function recoverToken(address[] calldata tokens) external onlyOwner {
         unchecked {
             for (uint8 i; i < tokens.length; ++i) {
