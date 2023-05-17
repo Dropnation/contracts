@@ -35,8 +35,7 @@ contract farmSnapshot is Ownable {
 
     function snapShot() external onlyOwner {
         IStaker staker = IStaker(harvester);
-        uint256 numberOfParticipants = staker.numberOfParticipants();
-        activeFarmersLength = numberOfParticipants;
+        uint256 numberOfParticipants = staker.numberOfParticipants(); 
 
         for (uint256 i = 0; i < numberOfParticipants; i++) {
             address participant = staker.participants(i);
@@ -46,6 +45,7 @@ contract farmSnapshot is Ownable {
             if (balance > threshold) {
                 ActiveFarmers[participant] = true;
                 Records[participant] = Record(balance, block.timestamp);
+                ++activeFarmersLength;
             }
         }
     }
