@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.17;
 
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
@@ -16,7 +15,7 @@ interface IStaker {
 contract farmSnapshot is Ownable {
     using ABDKMath64x64 for uint256;
 
-    address public harvester;
+    address public dropharvester;
     uint256 public activeFarmersLength;
     
     struct Record {
@@ -28,13 +27,13 @@ contract farmSnapshot is Ownable {
     mapping(address => Record) public Records; 
 
     constructor(
-        address harvester_
+        address dropharvester_
     ) {
-        harvester = harvester_;
+        dropharvester = dropharvester_;
     }
 
     function snapShot() external onlyOwner {
-        IStaker staker = IStaker(harvester);
+        IStaker staker = IStaker(dropharvester);
         uint256 numberOfParticipants = staker.numberOfParticipants(); 
 
         for (uint256 i = 0; i < numberOfParticipants; i++) {
