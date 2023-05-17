@@ -30,10 +30,11 @@ contract Distributor is Ownable, ReentrancyGuard {
     IERC20 public token;
     bytes32 public merkleRoot;
     address public harvester;
+    address private guard;
+    bool public paused = false; 
 
     event Claim(address indexed user, uint256 amount, address referrer);
     event Memedrop(address indexed staker, uint256 amount);
-
 
     mapping(address => bool) public claimedUser;
     mapping(address => bool) public claimedFarmer;
@@ -43,11 +44,18 @@ contract Distributor is Ownable, ReentrancyGuard {
     constructor(
         bytes32 root_, 
         IERC20 token_,
-        address harvester_
+        address harvester_,
+        address newguard_
     ) {
         merkleRoot = root_;
         token = token_;
         harvester = harvester_;
+        guard = newguard_;
+    }
+
+    modifier onlyGuard() {
+        require(msg.sender == guard, "Not authorized.");
+        _;
     }
 
     function setMerkleParam(bytes32 root_) external onlyOwner {
@@ -130,5 +138,26 @@ contract Distributor is Ownable, ReentrancyGuard {
                 IERC20(tokens[i]).safeTransfer(msg.sender, IERC20(tokens[i]).balanceOf(address(this)));
             }
         }
-    }    
+    }
+
+    event Pause();
+    function pause() public onlyGuard {
+        require(msg.sender == owner(), "Only Deployer.");
+        require(!paused, "Contract already paused.");
+        paused = true;
+        emit Pause();
+    }
+
+    event Unpause();
+    function unpause() public onlyGuard {
+        require(msg.sender == owner(), "Only Deployer.");
+        require(paused, "Contract not paused.");
+        paused = false;
+        emit Unpause();
+    }
+
+    function setGuard (address _newGuard) external onlyGuard {
+        guard = _newGuard;
+    }
+
 }
