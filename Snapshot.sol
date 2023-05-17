@@ -25,6 +25,7 @@ contract farmSnapshot is Ownable {
 
     mapping(address => bool) public ActiveFarmers;
     mapping(address => Record) public Records; 
+    address[] public farmers;
 
     constructor(
         address dropharvester_
@@ -43,6 +44,7 @@ contract farmSnapshot is Ownable {
 
             if (balance > threshold) {
                 ActiveFarmers[participant] = true;
+                farmers.push(msg.sender);
                 Records[participant] = Record(balance, block.timestamp);
                 ++activeFarmersLength;
             }
