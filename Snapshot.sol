@@ -44,7 +44,7 @@ contract farmSnapshot is Ownable {
 
             if (balance > threshold) {
                 ActiveFarmers[participant] = true;
-                farmers.push(msg.sender);
+                farmers.push(participant);
                 Records[participant] = Record(balance, block.timestamp);
                 ++activeFarmersLength;
             }
