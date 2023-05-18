@@ -35,13 +35,13 @@ contract Distributor is Ownable, ReentrancyGuard {
     mapping(address => uint256) public inviteRewards; 
     mapping(address => uint256) public inviteUsers;
     constructor(
-        bytes32 root_, 
-        bytes32 _root, 
+        bytes32 mRoot_, 
+        bytes32 _sroot, 
         IERC20 token_,
         address newguard_
     ) {
-        merkleRoot = root_;
-        stakerRoot = _root;
+        merkleRoot = mRoot_;
+        stakerRoot = _sroot;
         token = token_;
         guard = newguard_;
     }
