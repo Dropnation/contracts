@@ -51,9 +51,9 @@ contract Distributor is Ownable, ReentrancyGuard {
         _;
     }
 
-    function setMerkleParam(bytes32 root_, bytes32 _root) external onlyOwner {
-        merkleRoot = root_;
-        stakerRoot = _root;
+    function setMerkleParam(bytes32 mroot_, bytes32 _sroot) external onlyOwner {
+        merkleRoot = mroot_;
+        stakerRoot = _sroot;
     }
 
     function claimable() public view returns(uint256) {
