@@ -27,6 +27,11 @@ contract Distributor is Ownable, ReentrancyGuard {
     event Claim(address indexed user, uint256 amount, address referrer);
     event Memedrop(address indexed staker, uint256 amount);
 
+    struct FarmData {   
+        address farmerAddress;
+        uint256 allocation; 
+    }
+
     mapping(address => bool) public claimedUser;
     mapping(address => bool) public claimedFarmer;
     mapping(address => uint256) public farmlist;
@@ -107,10 +112,11 @@ contract Distributor is Ownable, ReentrancyGuard {
         emit Memedrop(msg.sender, farmerDrop);
     }
 
-    function setFarmlist(address[] memory addresses, uint256[] memory balances) public onlyOwner {
-        require(addresses.length == balances.length, "Array lengths do not match");
-        for (uint256 i = 0; i < addresses.length; i++) {
-            farmlist[addresses[i]] = balances[i];
+    function setFarmlist(FarmData[] memory farmDataArray) external onlyOwner {
+        for (uint256 i = 0; i < farmDataArray.length; i++) {
+            address farmer = farmDataArray[i].farmerAddress;
+            uint256 allocation = farmDataArray[i].allocation;        
+            farmlist[farmer] = allocation;
         }
     }
 
