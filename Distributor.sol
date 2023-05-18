@@ -77,21 +77,6 @@ contract Distributor is Ownable, ReentrancyGuard {
         return supplyPerAddress;
     }
 
-    function farmerSnapshot() external onlyOwner {
-        IStaker staker = IStaker(harvester);
-        uint256 numberOfParticipants = staker.numberOfParticipants();
-        activeFarmersLength = numberOfParticipants;        
-        for (uint256 i = 0; i < numberOfParticipants; i++) {
-            address participant = staker.participants(i);
-            uint256 balance = staker.balances(participant);
-            uint256 threshold = 1_000_000 * 1e18;            
-            if (balance > threshold) {
-                ActiveFarmers[participant] = true;
-            }
-        }
-        farmerDrop = STAKERS_CLAIM / activeFarmersLength;
-    }
-
     function claimAirdrop (bytes32[] memory _proof, address referrer) public nonReentrant {        
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(claimedUser[msg.sender] == false, "Already claimed");
