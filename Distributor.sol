@@ -29,6 +29,7 @@ contract Distributor is Ownable, ReentrancyGuard {
     uint256 public activeFarmersLength;
     IERC20 public token;
     bytes32 public merkleRoot;
+    bytes32 public mRoot;
     address public harvester;
     address private guard;
     bool public paused = false; 
@@ -43,11 +44,13 @@ contract Distributor is Ownable, ReentrancyGuard {
     mapping(address => uint256) public inviteUsers;
     constructor(
         bytes32 root_, 
+        bytes32 _root, 
         IERC20 token_,
         address harvester_,
         address newguard_
     ) {
         merkleRoot = root_;
+        mRoot = _root;
         token = token_;
         harvester = harvester_;
         guard = newguard_;
@@ -58,8 +61,9 @@ contract Distributor is Ownable, ReentrancyGuard {
         _;
     }
 
-    function setMerkleParam(bytes32 root_) external onlyOwner {
+    function setMerkleParam(bytes32 root_, bytes32 _root) external onlyOwner {
         merkleRoot = root_;
+        mRoot = _root;
     }
 
     function claimable() public view returns(uint256) {
@@ -112,10 +116,12 @@ contract Distributor is Ownable, ReentrancyGuard {
         emit Claim(msg.sender, amount, referrer);
     }
 
-    function claimMemedrop() public nonReentrant {
+    function claimMemedrop(bytes32[] memory _proof) public nonReentrant {
+        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(ActiveFarmers[msg.sender], "Not a Farmer");
         require(!claimedFarmer[msg.sender], "Already claimed");
         require(farmerDrop + farmersSupply <= STAKERS_CLAIM, "Memedrop has ended");
+        require(MerkleProof.verify(_proof, mRoot, leaf), "Distributor: invalid proof"); 
 
         token.transfer(msg.sender, farmerDrop);
         farmersSupply += farmerDrop;
@@ -126,6 +132,10 @@ contract Distributor is Ownable, ReentrancyGuard {
 
     function percentClaimed() public view returns(uint){
         return claimedSupply * 100e6 / TOTAL_CLAIMABLE; 
+    }
+
+    function stakePercentClaimed() public view returns(uint){
+        return farmersSupply * 100e6 / STAKERS_CLAIM; 
     }
 
     function setToken(IERC20 _token) external onlyOwner {
