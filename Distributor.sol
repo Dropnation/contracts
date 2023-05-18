@@ -9,13 +9,6 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-// Interface for the Staker contract
-interface IStaker {
-    function balances(address _staker) external view returns (uint256);
-    function participants(uint256 _index) external view returns (address);
-    function numberOfParticipants() external view returns (uint256);
-}
-
 contract Distributor is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using ABDKMath64x64 for uint256;
@@ -25,12 +18,9 @@ contract Distributor is Ownable, ReentrancyGuard {
     uint256 public constant STAKERS_CLAIM = 69_000_000_000_000 * 1e18;
     uint256 public claimedSupply;
     uint256 public farmersSupply;
-    uint256 public farmerDrop;
-    uint256 public activeFarmersLength;
     IERC20 public token;
     bytes32 public merkleRoot;
-    bytes32 public mRoot;
-    address public harvester;
+    bytes32 public stakerRoot;
     address private guard;
     bool public paused = false; 
 
@@ -39,20 +29,20 @@ contract Distributor is Ownable, ReentrancyGuard {
 
     mapping(address => bool) public claimedUser;
     mapping(address => bool) public claimedFarmer;
-    mapping(address => bool) public ActiveFarmers; 
+    mapping(address => uint256) public farmlist;
+    mapping(address => uint256) public airdropClaims;
+    mapping(address => uint256) public memedropClaims;
     mapping(address => uint256) public inviteRewards; 
     mapping(address => uint256) public inviteUsers;
     constructor(
         bytes32 root_, 
         bytes32 _root, 
         IERC20 token_,
-        address harvester_,
         address newguard_
     ) {
         merkleRoot = root_;
-        mRoot = _root;
+        stakerRoot = _root;
         token = token_;
-        harvester = harvester_;
         guard = newguard_;
     }
 
@@ -63,7 +53,7 @@ contract Distributor is Ownable, ReentrancyGuard {
 
     function setMerkleParam(bytes32 root_, bytes32 _root) external onlyOwner {
         merkleRoot = root_;
-        mRoot = _root;
+        stakerRoot = _root;
     }
 
     function claimable() public view returns(uint256) {
@@ -97,22 +87,31 @@ contract Distributor is Ownable, ReentrancyGuard {
             inviteRewards[referrer] += num;
             ++inviteUsers[referrer];
         }
-
+        airdropClaims[msg.sender] += amount; // Update airdropClaims map
         emit Claim(msg.sender, amount, referrer);
     }
 
     function claimMemedrop(bytes32[] memory _proof) public nonReentrant {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        require(ActiveFarmers[msg.sender], "Not a Farmer");
         require(!claimedFarmer[msg.sender], "Already claimed");
+        require(MerkleProof.verify(_proof, stakerRoot, leaf), "Distributor: invalid proof");
+
+        uint256 farmerDrop = farmlist[msg.sender]; // Get farmer's balance from the farmlist
         require(farmerDrop + farmersSupply <= STAKERS_CLAIM, "Memedrop has ended");
-        require(MerkleProof.verify(_proof, mRoot, leaf), "Distributor: invalid proof"); 
 
         token.transfer(msg.sender, farmerDrop);
         farmersSupply += farmerDrop;
-        claimedFarmer[msg.sender];
+        claimedFarmer[msg.sender] = true; // Update claimedFarmer status
+        memedropClaims[msg.sender] += farmerDrop; // Update memedropClaims mapping
 
         emit Memedrop(msg.sender, farmerDrop);
+    }
+
+    function setFarmlist(address[] memory addresses, uint256[] memory balances) public onlyOwner {
+        require(addresses.length == balances.length, "Array lengths do not match");
+        for (uint256 i = 0; i < addresses.length; i++) {
+            farmlist[addresses[i]] = balances[i];
+        }
     }
 
     function percentClaimed() public view returns(uint){
