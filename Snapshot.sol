@@ -17,14 +17,10 @@ contract farmSnapshot is Ownable {
 
     address public dropharvester;
     uint256 public activeFarmersLength;
-    
-    struct Record {
-        uint256 balance;
-        uint256 timestamp;
-    }
+    uint256 public allFarmersBalance;
 
     mapping(address => bool) public ActiveFarmers;
-    mapping(address => Record) public Records; 
+    mapping(address => uint256) public Records;
     address[] public farmers;
 
     constructor(
@@ -40,15 +36,14 @@ contract farmSnapshot is Ownable {
         for (uint256 i = 0; i < numberOfParticipants; i++) {
             address participant = staker.participants(i);
             uint256 balance = staker.balances(participant);
-            uint256 threshold = 1_000_000 * 1e18;
 
-            if (balance > threshold) {
+            if (balance > 0) {
                 ActiveFarmers[participant] = true;
                 farmers.push(participant);
-                Records[participant] = Record(balance, block.timestamp);
+                Records[participant] = balance;
+                allFarmersBalance += balance;
                 ++activeFarmersLength;
             }
         }
     }
-
 }
