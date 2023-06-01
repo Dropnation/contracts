@@ -15,7 +15,7 @@ contract Distributor is Ownable, ReentrancyGuard {
 
     uint256 public constant INIT_CLAIM = 70_750_200_000 * 1e18;
     uint256 public constant TOTAL_CLAIMABLE = 138_000_000_000_000 * 1e18;
-    uint256 public constant STAKERS_CLAIM = 69_000_000_000_000 * 1e18;
+    uint256 public constant STAKERS_CLAIM = 207_000_000_000_000 * 1e18;
     uint256 public claimedSupply;
     uint256 public farmersSupply;
     IERC20 public token;
