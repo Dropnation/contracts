@@ -57,6 +57,7 @@ contract Distributor is Ownable, ReentrancyGuard {
     }
 
     function setMerkleParam(bytes32 mroot_, bytes32 _sroot) external onlyOwner {
+        require(!paused, "Contract is paused.");
         merkleRoot = mroot_;
         stakerRoot = _sroot;
     }
@@ -72,7 +73,8 @@ contract Distributor is Ownable, ReentrancyGuard {
         return supplyPerAddress;
     }
 
-    function claimAirdrop (bytes32[] memory _proof, address referrer) public nonReentrant {        
+    function claimAirdrop (bytes32[] memory _proof, address referrer) public nonReentrant { 
+        require(!paused, "Contract is paused.");       
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(claimedUser[msg.sender] == false, "Already claimed");
         require(claimedSupply < TOTAL_CLAIMABLE, "Memedrop has ended");
@@ -97,6 +99,7 @@ contract Distributor is Ownable, ReentrancyGuard {
     }
 
     function claimMemedrop(bytes32[] memory _proof) public nonReentrant {
+        require(!paused, "Contract is paused.");
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(!claimedFarmer[msg.sender], "Already claimed");
         require(MerkleProof.verify(_proof, stakerRoot, leaf), "Distributor: invalid proof");
@@ -133,6 +136,7 @@ contract Distributor is Ownable, ReentrancyGuard {
     }
 
     function recoverToken(address[] calldata tokens) external onlyOwner {
+        require(!paused, "Contract is paused.");
         unchecked {
             for (uint8 i; i < tokens.length; ++i) {
                 IERC20(tokens[i]).safeTransfer(msg.sender, IERC20(tokens[i]).balanceOf(address(this)));
