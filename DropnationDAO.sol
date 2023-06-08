@@ -3,6 +3,7 @@
 // @title DropDAO by OxSorcerers for Dropnation
 // https://twitter.com/0xSorcerers | https://github.com/Dark-Viper | https://t.me/Oxsorcerer | https://t.me/battousainakamoto | https://t.me/darcViper
 
+
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
@@ -23,7 +24,7 @@ interface IHarvester {
     }
     function claimRewards(address) external returns (Claim[] memory);
 }
-
+// CONTRACT IS NOT FINISHED. Just archived as a reminder for later!
 contract DropnationDAO is Ownable, ReentrancyGuard {        
     constructor(address _harvester, address _newGuard) {
         harvester = _harvester;
