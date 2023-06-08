@@ -46,9 +46,9 @@ contract PulseDROP is ERC20, Ownable, ReentrancyGuard {
     function mint(uint256 _multiplier) external onlyOwner {        
         require(!paused, "Paused Contract");
         require(_multiplier > 0, "Invalid Multiplier");
-        require(totalSupply() <= MAX_SUPPLY, "Max Minted");
+        require(totalSupply() < MAX_SUPPLY, "Max Minted");
         uint256 multiplier =  _multiplier * (1_000_000 * 10 ** decimals());
-        require(totalSupply() + multiplier < MAX_SUPPLY, "Max Exceeded");
+        require(totalSupply() + multiplier <= MAX_SUPPLY, "Max Exceeded");
         _mint(msg.sender, multiplier);  
         emit mintEvent(multiplier);
     }
