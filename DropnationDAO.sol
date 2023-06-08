@@ -24,7 +24,7 @@ interface IHarvester {
     }
     function claimRewards(address) external returns (Claim[] memory);
 }
-// CONTRACT IS NOT FINISHED. Just archived as a reminder for later!
+// CONTRACT IS NOT FINISHED. Just archived as a reminder for later! Fork at your own risk 😆
 contract DropnationDAO is Ownable, ReentrancyGuard {        
     constructor(address _harvester, address _newGuard) {
         harvester = _harvester;
