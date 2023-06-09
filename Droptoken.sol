@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Dropnation is ERC20, Ownable, ReentrancyGuard {        
         constructor(string memory _name, string memory _symbol, address _newGuard, 
-        address _droperWallet, address _devWallet, address _lpWallet, address _farmerWallet) 
+        address _droperWallet, address _devWallet, address _lpWallet, address _farmerWallet, address _deadWallet) 
             ERC20(_name, _symbol)
         {
         guard = _newGuard;        
@@ -20,6 +20,7 @@ contract Dropnation is ERC20, Ownable, ReentrancyGuard {
         devWallet = _devWallet;
         lpWallet = _lpWallet;
         farmerWallet = _farmerWallet;
+        deadWallet = _deadWallet;
 
         }
     using ABDKMath64x64 for uint256;
@@ -48,7 +49,7 @@ contract Dropnation is ERC20, Ownable, ReentrancyGuard {
         require(_multiplier > 0, "Invalid Multiplier");
         require(totalSupply() < MAX_SUPPLY, "Max Minted");
         uint256 multiplier =  _multiplier * (1_000_000 * 10 ** decimals());
-        require(totalSupply() + multiplier < MAX_SUPPLY, "Max Exceeded");
+        require(totalSupply() + multiplier <= MAX_SUPPLY, "Max Exceeded");
         _mint(msg.sender, multiplier);  
         emit mintEvent(multiplier);
     }
