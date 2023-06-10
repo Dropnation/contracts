@@ -10,7 +10,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "./ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Dropnation is ERC20, Ownable, ReentrancyGuard {        
+contract PulseDROP is ERC20, Ownable, ReentrancyGuard {        
         constructor(string memory _name, string memory _symbol, address _newGuard, 
         address _droperWallet, address _devWallet, address _lpWallet, address _farmerWallet, address _deadWallet) 
             ERC20(_name, _symbol)
@@ -87,11 +87,12 @@ contract Dropnation is ERC20, Ownable, ReentrancyGuard {
     /**
      * @dev sets wallets tax is sent to.
      */
-    function setWallets (address _droperwallet, address _lpwallet, address _devWallet, address _farmerWallet) external onlyOwner {
+    function setWallets (address _droperwallet, address _lpwallet, address _devWallet, address _farmerWallet, address _deadWallet) external onlyOwner {
         droperWallet = _droperwallet;
         lpWallet = _lpwallet;
         devWallet = _devWallet;
         farmerWallet = _farmerWallet;
+        deadWallet = _deadWallet;
     }
 
     function setBurner (address _burner) external onlyOwner {
