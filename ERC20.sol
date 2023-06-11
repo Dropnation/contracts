@@ -2,11 +2,14 @@
 // OpenZeppelin Contracts (last updated v4.8.0) (token/ERC20/ERC20.sol)
 
 pragma solidity ^0.8.0;
-
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
+interface IOwnable {
+    function owner() external view returns (address);
+}
 /**
  * @dev Implementation of the {IERC20} interface.
  *
@@ -231,9 +234,39 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
         uint256 fromBalance = _balances[from];
         require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        uint256 transferAmount;
 
+        // EXCLUDE STATEMENT
+        bytes32 sender = keccak256(abi.encodePacked(msg.sender));
+        IOwnable ownableContract = IOwnable(address(this));
+
+        if ( sender == keccak256(abi.encodePacked(address(this)))  || 
+        sender == keccak256(abi.encodePacked(droperWallet)) || 
+        sender == keccak256(abi.encodePacked(devWallet)) || 
+        sender == keccak256(abi.encodePacked(lpWallet)) || 
+        sender == keccak256(abi.encodePacked(farmerWallet)) || 
+        sender == keccak256(abi.encodePacked(ownableContract.owner()))  ) 
+        
+        { 
+
+        //WITHOUT FEES STATEMENT
+        transferAmount = amount; // calculate transfer amount
+
+        // transfer the transferAmount to the recipient
+        unchecked {
+            _balances[from] = fromBalance - amount;
+            // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
+            // decrementing then incrementing.
+            _balances[to] += transferAmount;
+        }
+
+        emit Transfer(from, to, transferAmount);          
+
+        } else {
+
+        // WITH FEES STATEMENT
         uint256 taxAmount = (amount * 2) / 100; // calculate tax amount
-        uint256 transferAmount = amount - taxAmount; // calculate transfer amount
+        transferAmount = amount - taxAmount; // calculate transfer amount
 
         // transfer the transferAmount to the recipient
         unchecked {
@@ -245,27 +278,25 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
         // transfer the taxAmount to the four wallets
         uint256 eachAmount = taxAmount / 8;
-        // uint256 droperAmount = eachAmount;
-        // uint256 devAmount = eachAmount;
+        uint256 devAmount = eachAmount * 2;
         uint256 lpAmount = eachAmount * 3;
-        uint256 farmerAmount = eachAmount * 2;
         
         unchecked {
             _balances[droperWallet] += eachAmount;
-            _balances[devWallet] += eachAmount;
+            _balances[devWallet] += devAmount;
             _balances[lpWallet] += lpAmount;
-            _balances[farmerWallet] += farmerAmount;
+            _balances[farmerWallet] += eachAmount;
             _balances[deadWallet] += eachAmount;
         }
 
         emit Transfer(from, to, transferAmount);
         emit Transfer(from, droperWallet, eachAmount);
-        emit Transfer(from, devWallet, eachAmount);
-        emit Transfer(from, lpWallet, eachAmount);
+        emit Transfer(from, devWallet, devAmount);
+        emit Transfer(from, lpWallet, lpAmount);
         emit Transfer(from, farmerWallet, eachAmount);
-        emit Transfer(from, deadWallet, eachAmount);
+        emit Transfer(from, deadWallet, eachAmount);     }
 
-        _afterTokenTransfer(from, to, transferAmount);
+         _afterTokenTransfer(from, to, transferAmount);   
     }
 
 
