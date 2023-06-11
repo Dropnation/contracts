@@ -52,6 +52,25 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     string private _name;
     string private _symbol;
 
+    mapping(address => bool) private ExcludeFromFees;
+
+    
+    IOwnable ownableContract = IOwnable(address(this));
+
+    function addToExclusion(address[] calldata addresses) external {
+        require(msg.sender == ownableContract.owner(), "Not Owner");
+        for (uint256 i = 0; i < addresses.length; i++) {
+            ExcludeFromFees[addresses[i]] = true;
+        }
+    }
+
+    function removeFromExclusion (address[] calldata addresses) external {
+        require(msg.sender == ownableContract.owner(), "Not Owner");
+        for (uint256 i = 0; i < addresses.length; i++) {
+            ExcludeFromFees[addresses[i]] = false;
+        }
+    }
+
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -237,19 +256,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         uint256 transferAmount;
 
         // EXCLUDE STATEMENT
-        bytes32 sender = keccak256(abi.encodePacked(msg.sender));
-        IOwnable ownableContract = IOwnable(address(this));
 
-        if ( sender == keccak256(abi.encodePacked(address(this)))  || 
-        sender == keccak256(abi.encodePacked(droperWallet)) || 
-        sender == keccak256(abi.encodePacked(devWallet)) || 
-        sender == keccak256(abi.encodePacked(lpWallet)) || 
-        sender == keccak256(abi.encodePacked(farmerWallet)) || 
-        sender == keccak256(abi.encodePacked(ownableContract.owner()))  ) 
-        
-        { 
-
-        //WITHOUT FEES STATEMENT
+        if (ExcludeFromFees[msg.sender]) {
+        //WITHOUT FEES 
         transferAmount = amount; // calculate transfer amount
 
         // transfer the transferAmount to the recipient
