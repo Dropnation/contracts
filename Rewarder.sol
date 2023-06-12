@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract Rewarder is Ownable, ReentrancyGuard {
-    IERC20 public dropToken;
+contract PulseDropRewarder is Ownable, ReentrancyGuard {
+    IERC20 public DPLPToken;
     IERC20 public payToken;
     uint256 public totalRewards = 1;
     uint256 public totalClaimedRewards;
@@ -18,8 +18,8 @@ contract Rewarder is Ownable, ReentrancyGuard {
     uint256 public rewardPerStamp;
     uint256 public numberOfParticipants = 0;
     uint256 public Duration = 604800;
-    uint256 public timeLock = 3 days;
-    uint256 public TotaldropSent = 1;
+    uint256 public timeLock = 5;
+    uint256 public TotalDPLPSent = 1;
     uint256 public tax = 0;
     uint256 public TaxTotal = 0;
     uint256 private divisor = 100 ether;
@@ -37,22 +37,22 @@ contract Rewarder is Ownable, ReentrancyGuard {
 
     struct Claim {
         uint256 eraAtBlock;
-        uint256 dropSent;
+        uint256 DPLPSent;
         uint256 rewardsOwed;
     }
     
     event RewardsUpdated(uint256 totalRewards);
     event RewardAddedByDev(uint256 amount);
     event RewardClaimedByUser(address indexed user, uint256 amount);
-    event Adddrop(address indexed user, uint256 amount);
-    event Withdrawdrop(address indexed user, uint256 amount);
+    event AddDPLP(address indexed user, uint256 amount);
+    event WithdrawDPLP(address indexed user, uint256 amount);
     
     constructor(
-        address _dropToken,
+        address _DPLPToken,
         address _payToken,
         address _newGuard
     ) {
-        dropToken = IERC20(_dropToken);
+        DPLPToken = IERC20(_DPLPToken);
         payToken = IERC20(_payToken);
         guard = _newGuard;
         startTime = block.timestamp;
@@ -73,11 +73,11 @@ contract Rewarder is Ownable, ReentrancyGuard {
         _;
     }
 
-    function adddrop(uint256 _amount) public nonReentrant {
+    function addDPLP(uint256 _amount) public nonReentrant {
         require(!paused, "Contract is paused.");
         require(_amount > 0, "Amount must be greater than zero.");
         require(blacklist[msg.sender] == 0, "Address is blacklisted.");
-        require(dropToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed.");
+        require(DPLPToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed.");
         Claim storage claimData = claimRewards[msg.sender];
         uint256 toll = (_amount * tax)/100;
         uint256 amount = _amount - toll;
@@ -95,27 +95,27 @@ contract Rewarder is Ownable, ReentrancyGuard {
         }
     
         claimData.eraAtBlock = block.timestamp;
-        claimData.dropSent += amount;
-        TotaldropSent += amount;
+        claimData.DPLPSent += amount;
+        TotalDPLPSent += amount;
         setRewards();
-        emit Adddrop(msg.sender, _amount);
+        emit AddDPLP(msg.sender, _amount);
     }
 
     /**
-    * @dev Allows the user to withdraw their drop tokens
+    * @dev Allows the user to withdraw their DPLP tokens
     */
-    function withdrawdrop() public nonReentrant onlyAfterTimelock {
+    function withdrawDPLP() public nonReentrant onlyAfterTimelock {
         require(!paused, "Contract already paused.");
-        require(balances[msg.sender] > 0, "No drop tokens to withdraw.");        
-        uint256 dropAmount = balances[msg.sender];
-        require(dropToken.transfer(msg.sender, dropAmount), "Failed Transfer");  
+        require(balances[msg.sender] > 0, "No DPLP tokens to withdraw.");        
+        uint256 DPLPAmount = balances[msg.sender];
+        require(DPLPToken.transfer(msg.sender, DPLPAmount), "Failed Transfer");  
         
         updateAllClaims();     
-         //Delete all allocations of drop
+         //Delete all allocations of DPLP
         balances[msg.sender] = 0;
-        TotaldropSent -= dropAmount;
+        TotalDPLPSent -= DPLPAmount;
         Claim storage claimData = claimRewards[msg.sender];
-        claimData.dropSent = 0;
+        claimData.DPLPSent = 0;
 
        setRewards();
 
@@ -124,7 +124,7 @@ contract Rewarder is Ownable, ReentrancyGuard {
             entryMap[msg.sender] = 0; // reset the user's entry timestamp
         }
         
-        emit Withdrawdrop(msg.sender, dropAmount);
+        emit WithdrawDPLP(msg.sender, DPLPAmount);
     }
 
     /**
@@ -138,7 +138,8 @@ contract Rewarder is Ownable, ReentrancyGuard {
     }
 
     function setRewards() internal onlyOwner {
-        totalRewards = payToken.balanceOf(address(this));
+        uint256 reserve = payToken.balanceOf(address(this));        
+        totalRewards = reserve - TotalDPLPSent;
         updateRewardPerStamp();
         emit RewardsUpdated(totalRewards);
     }
@@ -154,7 +155,7 @@ contract Rewarder is Ownable, ReentrancyGuard {
             if (blacklist[participant] == 1) {
                 claimData.rewardsOwed = 0;
             } else {
-                uint256 rewardsAccrued = claimData.rewardsOwed + (rewardPerStamp * period * claimData.dropSent);
+                uint256 rewardsAccrued = claimData.rewardsOwed + (rewardPerStamp * period * claimData.DPLPSent);
                 claimData.rewardsOwed = rewardsAccrued;
             }
             claimData.eraAtBlock = currentTime;
@@ -162,7 +163,7 @@ contract Rewarder is Ownable, ReentrancyGuard {
     }
 
     function updateRewardPerStamp() internal {
-        rewardPerStamp = (totalRewards * divisor) / (TotaldropSent * Duration);
+        rewardPerStamp = (totalRewards * divisor) / (TotalDPLPSent * Duration);
     }
 
     function claim() public nonReentrant onlyClaimant {  
@@ -189,8 +190,8 @@ contract Rewarder is Ownable, ReentrancyGuard {
             require(payToken.transfer(msg.sender, amount), "Transfer failed.");
         } else {
             require(amount <= TaxTotal, "Max Exceeded.");
-            require(dropToken.balanceOf(address(this)) >= TaxTotal, "Not enough Reserves.");
-            require(dropToken.transfer(msg.sender, amount), "Transfer failed.");
+            require(DPLPToken.balanceOf(address(this)) >= TaxTotal, "Not enough Reserves.");
+            require(DPLPToken.transfer(msg.sender, amount), "Transfer failed.");
             TaxTotal -= amount;
         }
         setRewards();
@@ -210,8 +211,8 @@ contract Rewarder is Ownable, ReentrancyGuard {
         tax = _percent;
     }
 
-    function setdropToken(address _dropToken) external onlyOwner {
-        dropToken = IERC20(_dropToken);
+    function setDPLPToken(address _DPLPToken) external onlyOwner {
+        DPLPToken = IERC20(_DPLPToken);
     }
 
     function setPayToken(address _payToken) external onlyOwner {
