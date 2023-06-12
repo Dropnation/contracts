@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract PulseDropRewarder is Ownable, ReentrancyGuard {
+contract RewarderA is Ownable, ReentrancyGuard {
     IERC20 public DPLPToken;
     IERC20 public payToken;
     uint256 public totalRewards = 1;
