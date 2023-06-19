@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract RewarderB is Ownable, ReentrancyGuard {
+contract LPRewarder is Ownable, ReentrancyGuard {
     IERC20 public DPLPToken;
     IERC20 public payToken;
     uint256 public totalRewards = 1;
@@ -137,7 +137,7 @@ contract RewarderB is Ownable, ReentrancyGuard {
         emit RewardAddedByDev(_amount);
     }
 
-    function setRewards() internal onlyOwner {
+    function setRewards() internal {
         totalRewards = payToken.balanceOf(address(this));
         updateRewardPerStamp();
         emit RewardsUpdated(totalRewards);
